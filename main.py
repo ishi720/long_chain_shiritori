@@ -1,3 +1,4 @@
+import argparse
 import sys
 import time
 from typing import List, Dict, Set, Tuple
@@ -30,10 +31,10 @@ text_list = [
     'タッツー', 'シードラ', 'トサキント', 'アズマオウ', 'ヒトデマン',
     'スターミー', 'バリヤード', 'ストライク', 'ルージュラ', 'エレブー',
     'ブーバー', 'カイロス', 'ケンタロス', 'コイキング', 'ギャラドス',
-    # 'ラプラス', 'メタモン', 'イーブイ', 'シャワーズ', 'サンダース',
-    # 'ブースター', 'ポリゴン', 'オムナイト', 'オムスター', 'カブト',
-    # 'カブトプス', 'プテラ', 'カビゴン', 'フリーザー', 'サンダー', 'ファイヤー',
-    # 'ミニリュウ', 'ハクリュー', 'カイリュー', 'ミュウツー', 'ミュウ'
+    'ラプラス', 'メタモン', 'イーブイ', 'シャワーズ', 'サンダース',
+    'ブースター', 'ポリゴン', 'オムナイト', 'オムスター', 'カブト',
+    'カブトプス', 'プテラ', 'カビゴン', 'フリーザー', 'サンダー', 'ファイヤー',
+    'ミニリュウ', 'ハクリュー', 'カイリュー', 'ミュウツー', 'ミュウ'
 ]
 
 def normalize_char(char: str) -> str:
@@ -207,6 +208,15 @@ def find_longest_path(names: List[str]) -> List[str]:
     return max_path
 
 def main():
+    # 引数で匹数を指定する（省略したときは全部）
+    parser = argparse.ArgumentParser(description="深さ優先探索で最長のしりとりを探す")
+    parser.add_argument("count", nargs="?", type=int, default=len(text_list),
+                        help=f"先頭から何匹を対象にするか（1〜{len(text_list)}、省略時は{len(text_list)}）")
+    args = parser.parse_args()
+    if not 1 <= args.count <= len(text_list):
+        parser.error(f"匹数は1〜{len(text_list)}で指定してください")
+    names = text_list[:args.count]
+
     print("=" * 60)
 
     print("最長経路を探索中...")
@@ -214,7 +224,7 @@ def main():
 
     # 探索処理の時間計測
     search_start_time = time.time()
-    longest_path = find_longest_path(text_list)
+    longest_path = find_longest_path(names)
     search_end_time = time.time()
     search_duration = search_end_time - search_start_time
 
@@ -222,6 +232,7 @@ def main():
     print("=" * 60)
     print("結果")
     print("=" * 60)
+    print(f"対象: {len(names)}匹（{names[0]}〜{names[-1]}）")
     print(f"最長のしりとり: {len(longest_path)}匹")
     print()
 
