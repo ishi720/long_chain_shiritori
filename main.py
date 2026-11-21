@@ -143,6 +143,31 @@ def find_longest_path(names: List[str]) -> List[str]:
             max_path = [name, tail]
             break
 
+    def upper_bound(start_char: str, used: Set[int]) -> int:
+        """この先つなげられるテキスト数の上限を見積もる"""
+        # 今の文字からたどり着ける未使用のテキストを集める
+        out_count = {}
+        in_count = {}
+        visited = {start_char}
+        stack = [start_char]
+        while stack:
+            char = stack.pop()
+            for idx, name in graph.get(char, []):
+                if idx in used:
+                    continue
+                out_count[char] = out_count.get(char, 0) + 1
+                last_char = get_last_char(name)
+                in_count[last_char] = in_count.get(last_char, 0) + 1
+                if last_char not in visited:
+                    visited.add(last_char)
+                    stack.append(last_char)
+
+        # しりとりでは、文字ごとに「出ていく数」は「入ってくる数」を超えられない（出発する文字だけは1つ多くてよい）
+        bound = 0
+        for char, out in out_count.items():
+            bound += min(out, in_count.get(char, 0) + (1 if char == start_char else 0))
+        return bound
+
     def dfs(current_text: str, used: Set[int], path: List[str], head: str):
         nonlocal max_path
 
@@ -156,6 +181,11 @@ def find_longest_path(names: List[str]) -> List[str]:
         last_char = get_last_char(current_text)
 
         if last_char not in graph:
+            return
+
+        # 枝刈り：この先どれだけつなげても最長を超えられないなら戻る
+        limit = len(path) + (head is not None) + upper_bound(last_char, used) + (1 if tail_by_first_char else 0)
+        if limit <= len(max_path):
             return
 
         for idx, next_name in graph[last_char]:
