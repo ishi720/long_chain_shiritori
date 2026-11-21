@@ -1,34 +1,4 @@
-from typing import List, Dict
-
-from main import text_list, get_first_char, get_last_char
-
-
-def classify(names: List[str]) -> Dict[str, List[str]]:
-    """前後につながるかどうかで分類する"""
-    first_chars = {get_first_char(name) for name in names}
-    last_chars = {get_last_char(name) for name in names}
-
-    result = {
-        '前にも後ろにもつながらない': [],
-        '最初にしか置けない': [],
-        '最後にしか置けない': [],
-        '途中に置ける': [],
-    }
-
-    for name in names:
-        has_prev = get_first_char(name) in last_chars
-        has_next = get_last_char(name) in first_chars
-
-        if not has_prev and not has_next:
-            result['前にも後ろにもつながらない'].append(name)
-        elif not has_prev:
-            result['最初にしか置けない'].append(name)
-        elif not has_next:
-            result['最後にしか置けない'].append(name)
-        else:
-            result['途中に置ける'].append(name)
-
-    return result
+from main import text_list, get_first_char, get_last_char, classify
 
 
 def main():

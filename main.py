@@ -87,19 +87,70 @@ def build_graph(names: List[str]) -> Dict[str, List[Tuple[int, str]]]:
 
     return graph
 
+def classify(names: List[str]) -> Dict[str, List[str]]:
+    """前後につながるかどうかで分類する"""
+    first_chars = {get_first_char(name) for name in names}
+    last_chars = {get_last_char(name) for name in names}
+
+    result = {
+        '前にも後ろにもつながらない': [],
+        '最初にしか置けない': [],
+        '最後にしか置けない': [],
+        '途中に置ける': [],
+    }
+
+    for name in names:
+        has_prev = get_first_char(name) in last_chars
+        has_next = get_last_char(name) in first_chars
+
+        if not has_prev and not has_next:
+            result['前にも後ろにもつながらない'].append(name)
+        elif not has_prev:
+            result['最初にしか置けない'].append(name)
+        elif not has_next:
+            result['最後にしか置けない'].append(name)
+        else:
+            result['途中に置ける'].append(name)
+
+    return result
+
 def find_longest_path(names: List[str]) -> List[str]:
     """最長のしりとり経路を見つける"""
-    graph = build_graph(names)
-    n = len(names)
+    if not names:
+        return []
 
-    max_path = []
+    # つながらないテキストを探索の対象から外す
+    groups = classify(names)
+    middle = groups['途中に置ける']
 
-    def dfs(current_text: str, used: Set[int], path: List[str]):
+    # 最初にしか置けないテキストは先頭に、最後にしか置けないテキストは末尾に1つだけ付ける
+    head_by_last_char = {}
+    for name in groups['最初にしか置けない']:
+        head_by_last_char.setdefault(get_last_char(name), name)
+
+    tail_by_first_char = {}
+    for name in groups['最後にしか置けない']:
+        tail_by_first_char.setdefault(get_first_char(name), name)
+
+    graph = build_graph(middle)
+    n = len(middle)
+
+    # 途中に置けるテキストを使わない並び
+    max_path = [names[0]]
+    for name in groups['最初にしか置けない']:
+        tail = tail_by_first_char.get(get_last_char(name))
+        if tail is not None:
+            max_path = [name, tail]
+            break
+
+    def dfs(current_text: str, used: Set[int], path: List[str], head: str):
         nonlocal max_path
 
-        # 現在のパスの方が長ければ更新
-        if len(path) > len(max_path):
-            max_path = path.copy()
+        # 先頭と末尾を付けた長さの方が長ければ更新
+        tail = tail_by_first_char.get(get_last_char(current_text))
+        length = len(path) + (head is not None) + (tail is not None)
+        if length > len(max_path):
+            max_path = ([head] if head is not None else []) + path + ([tail] if tail is not None else [])
 
         # 次に続けられるテキストを探す
         last_char = get_last_char(current_text)
@@ -111,16 +162,17 @@ def find_longest_path(names: List[str]) -> List[str]:
             if idx not in used:
                 used.add(idx)
                 path.append(next_name)
-                dfs(next_name, used, path)
+                dfs(next_name, used, path, head)
                 path.pop()
                 used.remove(idx)
 
     # 探索を開始
-    for start_idx, start_name in enumerate(names):
+    for start_idx, start_name in enumerate(middle):
         print(f"探索中: {start_idx + 1}/{n} ({start_name})...")
+        head = head_by_last_char.get(get_first_char(start_name))
         used = {start_idx}
         path = [start_name]
-        dfs(start_name, used, path)
+        dfs(start_name, used, path, head)
 
     return max_path
 
